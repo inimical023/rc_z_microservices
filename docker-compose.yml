@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # Message broker (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Call Service
+  call-service:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile
+    command: python -m rc_zoho_microservices.call_service.service
+    ports:
+      - "8001:8001"
+    environment:
+      - MESSAGE_BROKER_TYPE=rabbitmq
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - CALL_SERVICE_HOST=0.0.0.0
+      - CALL_SERVICE_PORT=8001
+    volumes:
+      - ./config.json:/app/config.json
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Lead Service
+  lead-service:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile
+    command: python -m rc_zoho_microservices.lead_service.service
+    ports:
+      - "8002:8002"
+    environment:
+      - MESSAGE_BROKER_TYPE=rabbitmq
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - LEAD_SERVICE_HOST=0.0.0.0
+      - LEAD_SERVICE_PORT=8002
+    volumes:
+      - ./config.json:/app/config.json
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Orchestrator Service
+  orchestrator-service:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile
+    command: python -m rc_zoho_microservices.orchestrator_service.service
+    ports:
+      - "8003:8003"
+    environment:
+      - MESSAGE_BROKER_TYPE=rabbitmq
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - ORCHESTRATOR_SERVICE_HOST=0.0.0.0
+      - ORCHESTRATOR_SERVICE_PORT=8003
+    volumes:
+      - ./config.json:/app/config.json
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - call-service
+      - lead-service
+    restart: unless-stopped
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile
+    command: python -m rc_zoho_microservices.notification_service.service
+    ports:
+      - "8004:8004"
+    environment:
+      - MESSAGE_BROKER_TYPE=rabbitmq
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - NOTIFICATION_SERVICE_HOST=0.0.0.0
+      - NOTIFICATION_SERVICE_PORT=8004
+    volumes:
+      - ./config.json:/app/config.json
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - orchestrator-service
+    restart: unless-stopped
+
+  # Admin Service
+  admin-service:
+    build:
+      context: .
+      dockerfile: deployment/docker/Dockerfile
+    command: python -m rc_zoho_microservices.admin_service.service
+    ports:
+      - "8000:8000"
+    environment:
+      - ADMIN_SERVICE_HOST=0.0.0.0
+      - ADMIN_SERVICE_PORT=8000
+    volumes:
+      - ./config.json:/app/config.json
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./templates:/app/templates
+      - ./static:/app/static
+    depends_on:
+      - call-service
+      - lead-service
+      - orchestrator-service
+      - notification-service
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
