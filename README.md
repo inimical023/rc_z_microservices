@@ -39,7 +39,7 @@ This project implements a microservices architecture with event-driven communica
 
 ### Event-Driven Communication
 
-Services communicate asynchronously through a message broker (Kafka, RabbitMQ, or in-memory for development). Events include:
+Services communicate asynchronously through a message broker (RabbitMQ). Events include:
 
 - `call_logged`: Emitted when a call log is retrieved from RingCentral
 - `lead_created`: Emitted when a new lead is created in Zoho CRM
@@ -53,7 +53,7 @@ Services communicate asynchronously through a message broker (Kafka, RabbitMQ, o
 - **Web Framework:** FastAPI
 - **API Client:** HTTPX
 - **Data Validation:** Pydantic
-- **Message Broker:** Kafka/RabbitMQ (configurable)
+- **Message Broker:** RabbitMQ
 - **Containerization:** Docker
 - **Orchestration:** Kubernetes
 
@@ -63,173 +63,88 @@ Services communicate asynchronously through a message broker (Kafka, RabbitMQ, o
 
 - Python 3.9 or higher
 - pip (Python package manager)
-- Docker (optional, for containerized deployment)
+- Docker and Docker Compose (for containerized deployment)
 - Kubernetes (optional, for orchestrated deployment)
 
-### Single-Click Setup
+### Configuration
 
-For a quick and easy setup, use our single-click setup scripts:
-
-#### On Linux/macOS:
-```bash
-# Clone the repository
-git clone https://github.com/example/rc_zoho_microservices.git
-cd rc_zoho_microservices
-
-# Make the setup script executable
-chmod +x setup.sh
-
-# Run the setup script
-./setup.sh
-```
-
-#### On Windows:
-```bash
-# Clone the repository
-git clone https://github.com/example/rc_zoho_microservices.git
-cd rc_zoho_microservices
-
-# Run the setup script
-setup.bat
-```
-
-The setup script will:
-1. Check for required dependencies (Docker and Docker Compose)
-2. Create necessary directories
-3. Generate a default configuration file
-4. Optionally start all services using Docker Compose
-
-### Manual Development Setup
-
-1. Clone the repository:
+1. Create a configuration file:
    ```bash
-   git clone https://github.com/example/rc_zoho_microservices.git
-   cd rc_zoho_microservices
+   cp config.example.json config.json
    ```
 
-2. Create and activate a virtual environment:
+2. Update the configuration file with your credentials:
+   - RingCentral JWT token, client ID, and client secret
+   - Zoho client ID, client secret, and refresh token
+   - Message broker connection details
+   - Service-specific configuration
+
+**IMPORTANT**: The configuration file contains sensitive information and should not be committed to version control.
+
+### Docker Deployment
+
+1. Create and configure your `config.json` file
+   ```bash
+   cp config.example.json config.json
+   # Edit config.json with your credentials
+   ```
+
+2. Build the Docker images:
+   ```bash
+   docker-compose build
+   ```
+
+3. Start the services:
+   ```bash
+   docker-compose up -d
+   ```
+
+### Local Development Setup
+
+1. Create and activate a virtual environment:
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. Install the package in development mode:
+2. Install the package in development mode:
    ```bash
    pip install -e ".[dev]"
    ```
 
-4. Create a default configuration file:
+3. Create and configure your `config.json` file:
    ```bash
-   python -m rc_zoho_microservices.shared.config
+   cp config.example.json config.json
+   # Edit config.json with your credentials
    ```
 
-5. Update the configuration file with your credentials:
+4. Start each service individually:
    ```bash
-   # Edit config.json with your RingCentral and Zoho credentials
+   python call_service/service.py
+   python lead_service/service.py
+   python orchestrator_service/service.py
+   python notification_service/service.py
+   python admin_service/service.py
    ```
 
-### Docker Deployment
+## Environment Variable Configuration
 
-1. Build the Docker images:
-   ```bash
-   docker-compose build
-   ```
+The application can also be configured using environment variables. This is particularly useful for containerized deployments. The following environment variables are supported:
 
-2. Start the services:
-   ```bash
-   docker-compose up -d
-   ```
+- `RINGCENTRAL_JWT_TOKEN` - RingCentral JWT token
+- `RINGCENTRAL_CLIENT_ID` - RingCentral client ID
+- `RINGCENTRAL_CLIENT_SECRET` - RingCentral client secret
+- `ZOHO_CLIENT_ID` - Zoho CRM client ID
+- `ZOHO_CLIENT_SECRET` - Zoho CRM client secret
+- `ZOHO_REFRESH_TOKEN` - Zoho CRM refresh token
+- `RABBITMQ_HOST` - RabbitMQ host
+- `RABBITMQ_PORT` - RabbitMQ port
+- `RABBITMQ_USERNAME` - RabbitMQ username
+- `RABBITMQ_PASSWORD` - RabbitMQ password
 
-## Configuration
-
-The application is configured through a `config.json` file or environment variables. The configuration includes:
-
-- RingCentral API credentials
-- Zoho CRM API credentials
-- Message broker settings
-- Service configurations (host, port, log level, etc.)
-
-Example configuration:
-
-```json
-{
-  "ringcentral": {
-    "jwt_token": "your_jwt_token",
-    "client_id": "your_client_id",
-    "client_secret": "your_client_secret",
-    "account_id": "~"
-  },
-  "zoho": {
-    "client_id": "your_client_id",
-    "client_secret": "your_client_secret",
-    "refresh_token": "your_refresh_token"
-  },
-  "message_broker": {
-    "type": "memory"
-  },
-  "services": {
-    "call_service": {
-      "host": "0.0.0.0",
-      "port": 8001,
-      "log_level": "INFO",
-      "debug": false
-    },
-    "lead_service": {
-      "host": "0.0.0.0",
-      "port": 8002,
-      "log_level": "INFO",
-      "debug": false
-    },
-    "orchestrator_service": {
-      "host": "0.0.0.0",
-      "port": 8003,
-      "log_level": "INFO",
-      "debug": false
-    },
-    "admin_service": {
-      "host": "0.0.0.0",
-      "port": 8000,
-      "log_level": "INFO",
-      "debug": false
-    },
-    "notification_service": {
-      "host": "0.0.0.0",
-      "port": 8004,
-      "log_level": "INFO",
-      "debug": false
-    }
-  }
-}
-```
+Environment variables take precedence over values in the config.json file.
 
 ## Usage
-
-### Starting the Services
-
-Each service can be started individually:
-
-```bash
-# Start the Call Service
-python -m rc_zoho_microservices.call_service.service
-
-# Start the Lead Service
-python -m rc_zoho_microservices.lead_service.service
-
-# Start the Orchestrator Service
-python -m rc_zoho_microservices.orchestrator_service.service
-
-# Start the Notification Service
-python -m rc_zoho_microservices.notification_service.service
-
-# Start the Admin Service
-python -m rc_zoho_microservices.admin_service.service
-```
-
-Or using Docker Compose:
-
-```bash
-docker-compose up -d
-```
 
 ### Accessing the Admin Interface
 
@@ -257,54 +172,37 @@ Each service provides a Swagger UI for API documentation:
 - Notification Service: `http://localhost:8004/docs`
 - Admin Service: `http://localhost:8000/docs`
 
-## Development
+## Troubleshooting
 
-### Project Structure
+### Common Issues
 
-```
-rc_zoho_microservices/
-├── shared/                 # Shared utilities and models
-│   ├── utils.py            # Utility functions
-│   ├── models.py           # Data models
-│   ├── message_broker.py   # Message broker abstraction
-│   └── config.py           # Configuration handling
-├── call_service/           # RingCentral API interactions
-│   ├── ringcentral_client.py  # RingCentral API client
-│   └── service.py          # Call Service implementation
-├── lead_service/           # Zoho CRM API interactions
-│   ├── zoho_client.py      # Zoho CRM API client
-│   └── service.py          # Lead Service implementation
-├── orchestrator_service/   # Workflow orchestration
-│   └── service.py          # Orchestrator Service implementation
-├── notification_service/   # Email notifications
-│   └── service.py          # Notification Service implementation
-├── admin_service/          # Admin interface
-│   └── service.py          # Admin Service implementation
-├── deployment/             # Deployment configurations
-│   ├── docker/             # Docker configurations
-│   └── kubernetes/         # Kubernetes configurations
-└── docs/                   # Documentation
-```
+1. **Config file not found**: 
+   - Make sure you've created `config.json` in the project root
+   - Try specifying the full path to the config file
+   - Check if Docker volumes are mounting correctly
 
-### Running Tests
+2. **API Authentication Errors**:
+   - Verify your RingCentral and Zoho credentials
+   - Check that API tokens haven't expired
+   - Ensure the correct API version is being used (Zoho v7)
+
+3. **Service Communication Issues**:
+   - Check if RabbitMQ is running correctly
+   - Verify service endpoints are accessible
+   - Check network settings in Docker Compose
+
+### Health Checks
+
+Each service provides a health check endpoint at `/health`. Use this to verify service status:
 
 ```bash
-pytest
-```
-
-### Code Formatting
-
-```bash
-black .
-isort .
-```
-
-### Type Checking
-
-```bash
-mypy .
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+curl http://localhost:8003/health
+curl http://localhost:8004/health
+curl http://localhost:8000/health
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the LICENSE file for details. 

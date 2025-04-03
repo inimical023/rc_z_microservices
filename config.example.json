@@ -1,0 +1,59 @@
+{
+  "ringcentral": {
+    "jwt_token": "YOUR_JWT_TOKEN_HERE",
+    "client_id": "YOUR_RINGCENTRAL_CLIENT_ID",
+    "client_secret": "YOUR_RINGCENTRAL_CLIENT_SECRET",
+    "account_id": "~",
+    "base_url": "https://platform.ringcentral.com"
+  },
+  "zoho": {
+    "client_id": "YOUR_ZOHO_CLIENT_ID",
+    "client_secret": "YOUR_ZOHO_CLIENT_SECRET",
+    "refresh_token": "YOUR_ZOHO_REFRESH_TOKEN",
+    "base_url": "https://www.zohoapis.com/crm/v7"
+  },
+  "message_broker": {
+    "type": "rabbitmq",
+    "host": "rabbitmq",
+    "port": 5672,
+    "username": "guest",
+    "password": "guest"
+  },
+  "services": {
+    "call_service": {
+      "name": "call_service",
+      "host": "0.0.0.0",
+      "port": 8001,
+      "log_level": "INFO",
+      "debug": false
+    },
+    "lead_service": {
+      "name": "lead_service",
+      "host": "0.0.0.0",
+      "port": 8002,
+      "log_level": "INFO",
+      "debug": false
+    },
+    "orchestrator_service": {
+      "name": "orchestrator_service",
+      "host": "0.0.0.0",
+      "port": 8003,
+      "log_level": "INFO",
+      "debug": false
+    },
+    "admin_service": {
+      "name": "admin_service",
+      "host": "0.0.0.0",
+      "port": 8000,
+      "log_level": "INFO",
+      "debug": false
+    },
+    "notification_service": {
+      "name": "notification_service",
+      "host": "0.0.0.0",
+      "port": 8004,
+      "log_level": "INFO",
+      "debug": false
+    }
+  }
+} 

@@ -2,33 +2,30 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    python3-dev \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker cache
+# Copy requirements and setup files
+COPY requirements.txt /app/
 COPY setup.py /app/
 COPY README.md /app/
 
-# Create a temporary package to install dependencies
-RUN mkdir -p /app/rc_zoho_microservices
-RUN touch /app/rc_zoho_microservices/__init__.py
-
 # Install dependencies
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy application code
 COPY . /app/
 
 # Create necessary directories
 RUN mkdir -p /app/data /app/logs /app/templates /app/static
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
+# Set Python path
 ENV PYTHONPATH=/app
 
-# Default command
-CMD ["python", "-m", "rc_zoho_microservices.admin_service.service"]
+# Expose ports (all services)
+EXPOSE 8000 8001 8002 8003 8004
+
+# Command will be overridden by docker-compose.yml
+CMD ["python", "/app/admin_service/service.py"] 
